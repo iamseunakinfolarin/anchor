@@ -1,4 +1,4 @@
-import { Link } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { formatDuration } from '@/lib/format';
@@ -7,25 +7,25 @@ import type { ConfessionWithScriptures } from '@/lib/types';
 
 export function ConfessionRow({ confession }: { confession: ConfessionWithScriptures }) {
   const colors = useTheme();
+  const router = useRouter();
   const duration = formatDuration(confession.duration_seconds);
   const firstScripture = confession.scriptures[0]?.reference ?? null;
 
   return (
-    <Link href={{ pathname: '/confession/[id]', params: { id: confession.id } }} asChild>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={confession.title}
-        style={({ pressed }) => [styles.row, { backgroundColor: pressed ? colors.accentSoft : 'transparent' }]}
-      >
-        <View style={styles.text}>
-          <Text style={[styles.title, { color: colors.text }]}>{confession.title}</Text>
-          {firstScripture ? (
-            <Text style={[styles.reference, { color: colors.accent }]}>{firstScripture}</Text>
-          ) : null}
-        </View>
-        {duration ? <Text style={[styles.duration, { color: colors.textSecondary }]}>{duration}</Text> : null}
-      </Pressable>
-    </Link>
+    <Pressable
+      onPress={() => router.push({ pathname: '/confession/[id]', params: { id: confession.id } })}
+      accessibilityRole="button"
+      accessibilityLabel={confession.title}
+      style={({ pressed }) => [styles.row, { backgroundColor: pressed ? colors.accentSoft : 'transparent' }]}
+    >
+      <View style={styles.text}>
+        <Text style={[styles.title, { color: colors.text }]}>{confession.title}</Text>
+        {firstScripture ? (
+          <Text style={[styles.reference, { color: colors.accent }]}>{firstScripture}</Text>
+        ) : null}
+      </View>
+      {duration ? <Text style={[styles.duration, { color: colors.textSecondary }]}>{duration}</Text> : null}
+    </Pressable>
   );
 }
 
