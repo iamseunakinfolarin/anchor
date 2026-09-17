@@ -1,10 +1,16 @@
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'react-native';
 
+import { configureAudioSession } from '@/lib/audioSession';
 import { Colors } from '@/lib/theme';
 
 export default function RootLayout() {
+  useEffect(() => {
+    configureAudioSession();
+  }, []);
+
   const scheme = useColorScheme();
   const isDark = scheme === 'dark';
   const colors = isDark ? Colors.dark : Colors.light;

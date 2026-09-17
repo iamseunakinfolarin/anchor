@@ -14,7 +14,11 @@ Scripture-based confessions, browsable by category. Phase 1: catalog browsing ba
 3. Apply the schema and seed data, either:
    - `npm run db:apply` (requires `SUPABASE_DB_URL` in `.env`), or
    - paste `db/migrations/0001_schema.sql`, `db/migrations/0002_rls.sql`, then `db/seeds/0001_seed.sql` into the Supabase SQL editor in that order.
-4. `npx expo start` and open in Expo Go.
+4. Since Phase 2a the app needs a development build (native audio module) — Expo Go no longer works:
+   - Install the dev build APK on your Android phone (build one with `npx eas-cli build --platform android --profile development`).
+   - Run `npx expo start` and open the Anchor dev build; it connects to the dev server like Expo Go did.
+
+Audio engine is **expo-audio** (not react-native-track-player). Launch platform is Android; iOS is deferred.
 
 ## Checks
 

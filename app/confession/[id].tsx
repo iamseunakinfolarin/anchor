@@ -2,7 +2,7 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import { useCallback } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { PlayButton } from '@/components/PlayButton';
+import { Player } from '@/components/Player';
 import { ScreenState } from '@/components/ScreenState';
 import { ScriptureList } from '@/components/ScriptureList';
 import { formatDuration } from '@/lib/format';
@@ -41,7 +41,7 @@ export default function ConfessionScreen() {
           {duration ? <Text style={[styles.meta, { color: colors.textSecondary }]}>{duration}</Text> : null}
         </View>
 
-        <PlayButton />
+        <Player title={confession.title} audioUrl={confession.audio_url} />
 
         {confession.description ? (
           <Text style={[styles.description, { color: colors.text }]}>{confession.description}</Text>
