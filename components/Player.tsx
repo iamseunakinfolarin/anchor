@@ -1,5 +1,5 @@
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { formatDuration } from '@/lib/format';
@@ -24,7 +24,6 @@ function StreamingPlayer({ title, audioUrl }: { title: string; audioUrl: string 
   const colors = useTheme();
   const player = useAudioPlayer({ uri: audioUrl });
   const status = useAudioPlayerStatus(player);
-  const lockScreenActive = useRef(false);
 
   useEffect(() => {
     const p = player;
@@ -49,18 +48,22 @@ function StreamingPlayer({ title, audioUrl }: { title: string; audioUrl: string 
       player.pause();
       return;
     }
-    if (!lockScreenActive.current) {
-      // Required on Android for sustained background playback, and what puts the
-      // confession title with a play/pause control on the notification / lock screen.
+    if (finished) player.seekTo(0);
+    player.play();
+    // Required on Android for sustained background playback, and what puts the
+    // confession title with a play/pause control on the notification / lock screen.
+    // Called on EVERY play press, not once: if a binding attempt fails transiently
+    // (e.g. right after a cold start), the native connection stays retryable and the
+    // next press recovers it. When already active this just refreshes the metadata.
+    try {
       player.setActiveForLockScreen(
         true,
         { title, artist: 'Anchor' },
         { showSeekForward: false, showSeekBackward: false },
       );
-      lockScreenActive.current = true;
+    } catch {
+      // Non-fatal: playback works without lock-screen controls; retried on next press.
     }
-    if (finished) player.seekTo(0);
-    player.play();
   };
 
   const progress = hasDuration ? Math.min(status.currentTime / status.duration, 1) : 0;
