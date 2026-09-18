@@ -7,12 +7,11 @@ import { ScreenState } from '@/components/ScreenState';
 import { ScriptureList } from '@/components/ScriptureList';
 import { formatDuration } from '@/lib/format';
 import { fetchConfession } from '@/lib/queries';
-import { Spacing, useTheme } from '@/lib/theme';
+import { Colors, Spacing } from '@/lib/theme';
 import { useAsync } from '@/lib/useAsync';
 
 export default function ConfessionScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const colors = useTheme();
 
   const load = useCallback(() => fetchConfession(id), [id]);
   const state = useAsync(load);
@@ -30,21 +29,21 @@ export default function ConfessionScreen() {
     <>
       <Stack.Screen options={{ title: confession.title }} />
       <ScrollView
-        style={{ backgroundColor: colors.background }}
+        style={{ backgroundColor: Colors.paper }}
         contentContainerStyle={styles.content}
         contentInsetAdjustmentBehavior="automatic"
       >
         <View style={styles.header}>
-          <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">
+          <Text style={[styles.title, { color: Colors.ink }]} accessibilityRole="header">
             {confession.title}
           </Text>
-          {duration ? <Text style={[styles.meta, { color: colors.textSecondary }]}>{duration}</Text> : null}
+          {duration ? <Text style={[styles.meta, { color: Colors.stone }]}>{duration}</Text> : null}
         </View>
 
         <Player title={confession.title} audioUrl={confession.audio_url} />
 
         {confession.description ? (
-          <Text style={[styles.description, { color: colors.text }]}>{confession.description}</Text>
+          <Text style={[styles.description, { color: Colors.ink }]}>{confession.description}</Text>
         ) : null}
 
         <ScriptureList scriptures={confession.scriptures} />

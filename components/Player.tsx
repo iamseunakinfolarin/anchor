@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { formatDuration } from '@/lib/format';
-import { Spacing, useTheme } from '@/lib/theme';
+import { Colors, Spacing } from '@/lib/theme';
 
 interface PlayerProps {
   title: string;
@@ -21,7 +21,6 @@ export function Player({ title, audioUrl }: PlayerProps) {
 }
 
 function StreamingPlayer({ title, audioUrl }: { title: string; audioUrl: string }) {
-  const colors = useTheme();
   const player = useAudioPlayer({ uri: audioUrl });
   const status = useAudioPlayerStatus(player);
 
@@ -78,7 +77,7 @@ function StreamingPlayer({ title, audioUrl }: { title: string; audioUrl: string 
           accessibilityState={{ busy }}
           style={({ pressed }) => [
             styles.button,
-            { backgroundColor: colors.accent, opacity: pressed ? 0.85 : 1 },
+            { backgroundColor: Colors.ink, opacity: pressed ? 0.85 : 1 },
           ]}
         >
           {busy ? (
@@ -88,15 +87,15 @@ function StreamingPlayer({ title, audioUrl }: { title: string; audioUrl: string 
           )}
         </Pressable>
         <View style={styles.timing}>
-          <View style={[styles.track, { backgroundColor: colors.disabled }]}>
+          <View style={[styles.track, { backgroundColor: Colors.hairline }]}>
             <View
               style={[
                 styles.fill,
-                { backgroundColor: colors.accent, width: `${progress * 100}%` },
+                { backgroundColor: Colors.ink, width: `${progress * 100}%` },
               ]}
             />
           </View>
-          <Text style={[styles.time, { color: colors.textSecondary }]}>
+          <Text style={[styles.time, { color: Colors.stone }]}>
             {hasDuration
               ? `${formatDuration(Math.floor(status.currentTime))} / ${formatDuration(Math.round(status.duration))}`
               : busy
@@ -106,7 +105,7 @@ function StreamingPlayer({ title, audioUrl }: { title: string; audioUrl: string 
         </View>
       </View>
       {failed ? (
-        <Text style={[styles.caption, { color: colors.textSecondary }]}>
+        <Text style={[styles.caption, { color: Colors.stone }]}>
           Audio unavailable. Check your connection and tap play to retry.
         </Text>
       ) : null}
@@ -115,7 +114,6 @@ function StreamingPlayer({ title, audioUrl }: { title: string; audioUrl: string 
 }
 
 function DisabledPlayer({ caption }: { caption: string }) {
-  const colors = useTheme();
   return (
     <View style={styles.wrap}>
       <View style={styles.controls}>
@@ -125,11 +123,11 @@ function DisabledPlayer({ caption }: { caption: string }) {
           accessibilityLabel="Play"
           accessibilityState={{ disabled: true }}
           accessibilityHint="Audio playback is not available for this confession yet"
-          style={[styles.button, { backgroundColor: colors.disabled }]}
+          style={[styles.button, { backgroundColor: Colors.hairline }]}
         >
-          <Text style={[styles.icon, { color: colors.disabledText }]}>▶</Text>
+          <Text style={[styles.icon, { color: Colors.stone }]}>▶</Text>
         </Pressable>
-        <Text style={[styles.caption, { color: colors.textSecondary }]}>{caption}</Text>
+        <Text style={[styles.caption, { color: Colors.stone }]}>{caption}</Text>
       </View>
     </View>
   );

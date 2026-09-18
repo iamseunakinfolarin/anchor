@@ -1,36 +1,69 @@
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
-import { useEffect } from 'react';
+import {
+  Fraunces_400Regular,
+  Fraunces_500Medium,
+  useFonts,
+} from '@expo-google-fonts/fraunces';
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+} from '@expo-google-fonts/inter';
+import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useColorScheme } from 'react-native';
+import { useEffect } from 'react';
+import { View } from 'react-native';
 
 import { configureAudioSession } from '@/lib/audioSession';
-import { Colors } from '@/lib/theme';
+import { Colors, Fonts } from '@/lib/theme';
+
+// Hold the splash until the typefaces are ready, so nothing renders in a
+// system fallback and swaps.
+SplashScreen.preventAutoHideAsync().catch(() => {
+  // Already hidden, or unavailable on this platform. Non-fatal.
+});
 
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    Fraunces_400Regular,
+    Fraunces_500Medium,
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+  });
+
   useEffect(() => {
     configureAudioSession();
   }, []);
 
-  const scheme = useColorScheme();
-  const isDark = scheme === 'dark';
-  const colors = isDark ? Colors.dark : Colors.light;
+  useEffect(() => {
+    if (fontsLoaded) {
+      SplashScreen.hideAsync().catch(() => {
+        // Already hidden. Non-fatal.
+      });
+    }
+  }, [fontsLoaded]);
+
+  // Paper-colored holding view, not null, so the handoff from the splash never
+  // flashes a white or black frame.
+  if (!fontsLoaded) return <View style={{ flex: 1, backgroundColor: Colors.paper }} />;
 
   return (
-    <ThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
-      <StatusBar style="auto" />
+    <>
+      <StatusBar style="dark" />
       <Stack
         screenOptions={{
-          headerTintColor: colors.accent,
-          headerTitleStyle: { color: colors.text },
-          headerStyle: { backgroundColor: colors.background },
+          headerTintColor: Colors.ink,
+          headerTitleStyle: { color: Colors.ink, fontFamily: Fonts.displayMedium, fontSize: 18 },
+          headerStyle: { backgroundColor: Colors.paper },
           headerShadowVisible: false,
-          contentStyle: { backgroundColor: colors.background },
+          contentStyle: { backgroundColor: Colors.paper },
         }}
       >
-        <Stack.Screen name="index" options={{ title: 'Anchor' }} />
+        <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="category/[id]" options={{ title: '' }} />
         <Stack.Screen name="confession/[id]" options={{ title: '' }} />
       </Stack>
-    </ThemeProvider>
+    </>
   );
 }

@@ -1,25 +1,30 @@
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { FlatList, StyleSheet } from 'react-native';
 
-import { ConfessionRow } from '@/components/ConfessionRow';
+import { ListRow, RowDivider } from '@/components/ListRow';
 import { ScreenState } from '@/components/ScreenState';
+import { formatDuration } from '@/lib/format';
 import { fetchCategory, fetchConfessionsByCategory } from '@/lib/queries';
-import { Spacing, useTheme } from '@/lib/theme';
+import { Colors, Spacing } from '@/lib/theme';
 import { useAsync } from '@/lib/useAsync';
 
 export default function CategoryScreen() {
   const { id, name } = useLocalSearchParams<{ id: string; name?: string }>();
-  const colors = useTheme();
+  const router = useRouter();
 
   const load = useCallback(async () => {
-    const [category, confessions] = await Promise.all([fetchCategory(id), fetchConfessionsByCategory(id)]);
+    const [category, confessions] = await Promise.all([
+      fetchCategory(id),
+      fetchConfessionsByCategory(id),
+    ]);
     return { category, confessions };
   }, [id]);
   const state = useAsync(load);
 
   // The name param gives an instant title; the loaded row corrects it if the param was absent.
-  const title = state.status === 'success' && state.data.category ? state.data.category.name : (name ?? '');
+  const title =
+    state.status === 'success' && state.data.category ? state.data.category.name : (name ?? '');
 
   let body;
   if (state.status === 'loading') {
@@ -27,7 +32,13 @@ export default function CategoryScreen() {
   } else if (state.status === 'error') {
     body = <ScreenState kind="error" error={state.error} onRetry={state.reload} />;
   } else if (!state.data.category) {
-    body = <ScreenState kind="empty" title="Category not found" message="This category may have been removed." />;
+    body = (
+      <ScreenState
+        kind="empty"
+        title="Category not found"
+        message="This category may have been removed."
+      />
+    );
   } else if (state.data.confessions.length === 0) {
     body = (
       <ScreenState
@@ -41,10 +52,19 @@ export default function CategoryScreen() {
       <FlatList
         data={state.data.confessions}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <ConfessionRow confession={item} />}
-        ItemSeparatorComponent={() => <View style={[styles.separator, { backgroundColor: colors.border }]} />}
+        renderItem={({ item }) => (
+          <ListRow
+            title={item.title}
+            titleFace="serif"
+            trailing={formatDuration(item.duration_seconds)}
+            onPress={() =>
+              router.push({ pathname: '/confession/[id]', params: { id: item.id } })
+            }
+          />
+        )}
+        ItemSeparatorComponent={RowDivider}
         contentContainerStyle={styles.list}
-        style={{ backgroundColor: colors.background }}
+        style={styles.screen}
       />
     );
   }
@@ -58,6 +78,6 @@ export default function CategoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  list: { paddingVertical: Spacing.sm },
-  separator: { height: StyleSheet.hairlineWidth, marginLeft: Spacing.md },
+  screen: { flex: 1, backgroundColor: Colors.paper },
+  list: { paddingTop: Spacing.sm, paddingBottom: Spacing.xxl },
 });
