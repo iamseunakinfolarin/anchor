@@ -31,6 +31,12 @@ export function TodayCard({ confession, onPress }: TodayCardProps) {
         <Text style={styles.tagText}>Today</Text>
       </View>
       <Text style={styles.title}>{confession.title}</Text>
+      {confession.description ? (
+        <View style={styles.quote}>
+          <View style={styles.quoteRule} />
+          <Text style={styles.quoteText}>{confession.description}</Text>
+        </View>
+      ) : null}
       {meta ? <Text style={styles.meta}>{meta}</Text> : null}
     </Pressable>
   );
@@ -50,5 +56,8 @@ const styles = StyleSheet.create({
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.beacon },
   tagText: { ...TypeScale.eyebrow, color: Colors.beacon },
   title: { ...TypeScale.title, color: Colors.ink },
+  quote: { flexDirection: 'row', gap: Spacing.sm, paddingVertical: 2 },
+  quoteRule: { width: 2, backgroundColor: Colors.hairline },
+  quoteText: { ...TypeScale.body, color: Colors.ink, fontStyle: 'italic', flex: 1 },
   meta: { ...TypeScale.meta, color: Colors.stone },
 });

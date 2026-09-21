@@ -9,7 +9,11 @@ export const Colors = {
   ink: '#0B0B0A',
   /** Background. */
   paper: '#F6F1E7',
-  /** The single accent: playing state, "Today" marker, saved-filled state. Nowhere else. */
+  /**
+   * The single accent. Sanctioned uses only: the "Today" marker on Home, the
+   * category index numeral on category detail, the confession title while a
+   * confession is playing, and saved-filled state (future). Nowhere else.
+   */
   beacon: '#E15039',
   /** Secondary text, metadata. */
   stone: '#8A8172',
@@ -23,9 +27,13 @@ export type ColorToken = keyof typeof Colors;
 export const Fonts = {
   display: 'Fraunces_400Regular',
   displayMedium: 'Fraunces_500Medium',
+  /** Only for the playing-state confession title: the one place a heavy serif weight is wanted. */
+  displayBold: 'Fraunces_700Bold',
   ui: 'Inter_400Regular',
   uiMedium: 'Inter_500Medium',
   uiSemiBold: 'Inter_600SemiBold',
+  /** Only for the playing-state confession text. */
+  uiBold: 'Inter_700Bold',
 } as const;
 
 /** 8pt-derived rhythm, generous at the top end for the single-column layout. */
@@ -50,6 +58,12 @@ export const TypeScale = {
   body: { fontFamily: Fonts.ui, fontSize: 16, lineHeight: 24 },
   meta: { fontFamily: Fonts.ui, fontSize: 13, lineHeight: 18 },
   eyebrow: { fontFamily: Fonts.uiMedium, fontSize: 12, lineHeight: 16, letterSpacing: 0.8 },
+  /** Confession title while playing: the dominant element on the screen. Pair with textTransform: 'uppercase'. */
+  playingTitle: { fontFamily: Fonts.displayBold, fontSize: 34, lineHeight: 40, letterSpacing: 0.3 },
+  /** The confession's spoken text while playing. */
+  playingBody: { fontFamily: Fonts.uiBold, fontSize: 22, lineHeight: 34 },
+  /** The single scripture reference shown while playing: small and quiet. */
+  playingReference: { fontFamily: Fonts.display, fontSize: 14, lineHeight: 20 },
 } as const;
 
 export const HairlineWidth = StyleSheet.hairlineWidth;

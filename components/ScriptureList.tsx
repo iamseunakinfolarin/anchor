@@ -3,6 +3,13 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Colors, HairlineWidth, Spacing, TypeScale } from '@/lib/theme';
 import type { Scripture } from '@/lib/types';
 
+/** Only these translations are licensed for display; anything else hides the verse text. */
+const ALLOWED_VERSIONS = new Set(['KJV', 'WEB']);
+
+function isLicensedVersion(version: string | null): boolean {
+  return version === null || ALLOWED_VERSIONS.has(version.toUpperCase());
+}
+
 export function ScriptureList({ scriptures }: { scriptures: Scripture[] }) {
   return (
     <View style={styles.section}>
@@ -16,7 +23,9 @@ export function ScriptureList({ scriptures }: { scriptures: Scripture[] }) {
               {s.reference}
               {s.version ? <Text style={styles.version}>{`  ·  ${s.version}`}</Text> : null}
             </Text>
-            {s.text ? <Text style={styles.verse}>{s.text}</Text> : null}
+            {s.text && isLicensedVersion(s.version) ? (
+              <Text style={styles.verse}>{s.text}</Text>
+            ) : null}
           </View>
         ))
       )}

@@ -1,13 +1,32 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback } from 'react';
-import { FlatList, StyleSheet } from 'react-native';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 
 import { ListRow, RowDivider } from '@/components/ListRow';
 import { ScreenState } from '@/components/ScreenState';
-import { formatDuration } from '@/lib/format';
+import { formatDuration, toRoman } from '@/lib/format';
 import { fetchCategory, fetchConfessionsByCategory } from '@/lib/queries';
-import { Colors, Spacing } from '@/lib/theme';
+import { Colors, Spacing, TypeScale } from '@/lib/theme';
+import type { Category } from '@/lib/types';
 import { useAsync } from '@/lib/useAsync';
+
+/**
+ * The category's own rank among all 14, in beacon, beside its name. Rendered
+ * only once the category has loaded, since the numeral comes from
+ * category.sort_order; before that the plain name paints instantly instead.
+ */
+function CategoryHeaderTitle({ category, fallbackName }: { category: Category | null; fallbackName: string }) {
+  if (!category) {
+    return <Text style={styles.headerName}>{fallbackName}</Text>;
+  }
+  return (
+    <Text style={styles.headerTitle} numberOfLines={1}>
+      <Text style={styles.headerRoman}>{toRoman(category.sort_order)}</Text>
+      <Text style={styles.headerDot}> · </Text>
+      <Text style={styles.headerName}>{category.name}</Text>
+    </Text>
+  );
+}
 
 export default function CategoryScreen() {
   const { id, name } = useLocalSearchParams<{ id: string; name?: string }>();
@@ -22,16 +41,14 @@ export default function CategoryScreen() {
   }, [id]);
   const state = useAsync(load);
 
-  // The name param gives an instant title; the loaded row corrects it if the param was absent.
-  const title =
-    state.status === 'success' && state.data.category ? state.data.category.name : (name ?? '');
+  const category = state.status === 'success' ? state.data.category : null;
 
   let body;
   if (state.status === 'loading') {
     body = <ScreenState kind="loading" />;
   } else if (state.status === 'error') {
     body = <ScreenState kind="error" error={state.error} onRetry={state.reload} />;
-  } else if (!state.data.category) {
+  } else if (!category) {
     body = (
       <ScreenState
         kind="empty"
@@ -52,8 +69,11 @@ export default function CategoryScreen() {
       <FlatList
         data={state.data.confessions}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => (
           <ListRow
+            leading={
+              <Text style={styles.liturgyNumber}>{`No. ${String(index + 1).padStart(2, '0')}`}</Text>
+            }
             title={item.title}
             titleFace="serif"
             trailing={formatDuration(item.duration_seconds)}
@@ -71,8 +91,10 @@ export default function CategoryScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title }} />
-      {body}
+      <Stack.Screen
+        options={{ headerTitle: () => <CategoryHeaderTitle category={category} fallbackName={name ?? ''} /> }}
+      />
+      <View style={styles.screen}>{body}</View>
     </>
   );
 }
@@ -80,4 +102,14 @@ export default function CategoryScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.paper },
   list: { paddingTop: Spacing.sm, paddingBottom: Spacing.xxl },
+  headerTitle: { flexShrink: 1 },
+  headerRoman: { ...TypeScale.rowLabel, color: Colors.beacon, fontWeight: '700' },
+  headerDot: { ...TypeScale.rowLabel, color: Colors.hairline },
+  headerName: { ...TypeScale.rowLabel, color: Colors.ink },
+  liturgyNumber: {
+    ...TypeScale.meta,
+    color: Colors.stone,
+    fontVariant: ['tabular-nums'],
+    width: 52,
+  },
 });

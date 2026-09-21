@@ -1,103 +1,84 @@
-import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
-import { useEffect } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { formatDuration } from '@/lib/format';
+import type { PlayerState } from '@/lib/usePlayer';
 import { Colors, Spacing } from '@/lib/theme';
 
-interface PlayerProps {
-  title: string;
-  audioUrl: string | null;
+interface PlayerProps extends PlayerState {
+  /** 'light' for the paper screen, 'dark' for the ink playing screen. */
+  variant: 'light' | 'dark';
 }
 
 /**
- * Single-confession player: play/pause, buffering indicator, elapsed and total time.
- * Duration comes from the stream at runtime, not from the database.
- * Confessions without audio render a disabled control instead.
+ * Purely presentational transport control: a play/pause button and a
+ * progress bar. Holds no audio state itself — usePlayer supplies everything
+ * here as props, so this component can be re-themed between the paper and
+ * ink layouts without ever unmounting the underlying audio connection.
  */
-export function Player({ title, audioUrl }: PlayerProps) {
-  if (!audioUrl) return <DisabledPlayer caption="Audio coming soon" />;
-  return <StreamingPlayer title={title} audioUrl={audioUrl} />;
-}
+export function Player({
+  playing,
+  busy,
+  failed,
+  hasDuration,
+  currentTime,
+  duration,
+  progress,
+  disabled,
+  toggle,
+  variant,
+}: PlayerProps) {
+  const dark = variant === 'dark';
+  const buttonColor = disabled ? Colors.hairline : dark ? Colors.paper : Colors.ink;
+  const glyphColor = disabled ? Colors.stone : dark ? Colors.ink : '#FFFFFF';
+  const trackColor = dark ? '#3A352C' : Colors.hairline;
+  const fillColor = dark ? Colors.paper : Colors.ink;
+  const timeColor = Colors.stone;
 
-function StreamingPlayer({ title, audioUrl }: { title: string; audioUrl: string }) {
-  const player = useAudioPlayer({ uri: audioUrl });
-  const status = useAudioPlayerStatus(player);
+  const button = (
+    <Pressable
+      onPress={toggle}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={playing ? 'Pause' : 'Play'}
+      accessibilityState={{ disabled, busy }}
+      style={({ pressed }) => [
+        styles.button,
+        { backgroundColor: buttonColor, opacity: pressed && !disabled ? 0.85 : 1 },
+      ]}
+    >
+      {busy ? (
+        <ActivityIndicator color={glyphColor} />
+      ) : (
+        <Text style={[styles.icon, { color: glyphColor }]}>{playing ? '❚❚' : '▶'}</Text>
+      )}
+    </Pressable>
+  );
 
-  useEffect(() => {
-    const p = player;
-    return () => {
-      // The hook releases the player on unmount; drop the media notification with it.
-      try {
-        p.clearLockScreenControls();
-      } catch {
-        // Player already released — nothing to clear.
-      }
-    };
-  }, [player]);
-
-  const failed = status.error !== null;
-  const busy = status.isBuffering && !failed;
-  const hasDuration = status.isLoaded && status.duration > 0;
-  const finished =
-    status.didJustFinish || (hasDuration && status.currentTime >= status.duration - 0.05);
-
-  const onToggle = () => {
-    if (status.playing) {
-      player.pause();
-      return;
-    }
-    if (finished) player.seekTo(0);
-    player.play();
-    // Required on Android for sustained background playback, and what puts the
-    // confession title with a play/pause control on the notification / lock screen.
-    // Called on EVERY play press, not once: if a binding attempt fails transiently
-    // (e.g. right after a cold start), the native connection stays retryable and the
-    // next press recovers it. When already active this just refreshes the metadata.
-    try {
-      player.setActiveForLockScreen(
-        true,
-        { title, artist: 'Anchor' },
-        { showSeekForward: false, showSeekBackward: false },
-      );
-    } catch {
-      // Non-fatal: playback works without lock-screen controls; retried on next press.
-    }
-  };
-
-  const progress = hasDuration ? Math.min(status.currentTime / status.duration, 1) : 0;
+  // No audio: the original Phase 2a treatment — button plus a caption, no
+  // track — is preserved exactly rather than growing a progress bar nobody
+  // asked to see for a confession that can never play.
+  if (disabled) {
+    return (
+      <View style={styles.wrap}>
+        <View style={styles.controls}>
+          {button}
+          <Text style={[styles.caption, { color: timeColor }]}>Audio coming soon</Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.wrap}>
       <View style={styles.controls}>
-        <Pressable
-          onPress={onToggle}
-          accessibilityRole="button"
-          accessibilityLabel={status.playing ? 'Pause' : 'Play'}
-          accessibilityState={{ busy }}
-          style={({ pressed }) => [
-            styles.button,
-            { backgroundColor: Colors.ink, opacity: pressed ? 0.85 : 1 },
-          ]}
-        >
-          {busy ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : (
-            <Text style={styles.icon}>{status.playing ? '❚❚' : '▶'}</Text>
-          )}
-        </Pressable>
+        {button}
         <View style={styles.timing}>
-          <View style={[styles.track, { backgroundColor: Colors.hairline }]}>
-            <View
-              style={[
-                styles.fill,
-                { backgroundColor: Colors.ink, width: `${progress * 100}%` },
-              ]}
-            />
+          <View style={[styles.track, { backgroundColor: trackColor }]}>
+            <View style={[styles.fill, { backgroundColor: fillColor, width: `${progress * 100}%` }]} />
           </View>
-          <Text style={[styles.time, { color: Colors.stone }]}>
+          <Text style={[styles.time, { color: timeColor }]}>
             {hasDuration
-              ? `${formatDuration(Math.floor(status.currentTime))} / ${formatDuration(Math.round(status.duration))}`
+              ? `${formatDuration(Math.floor(currentTime))} / ${formatDuration(Math.round(duration))}`
               : busy
                 ? 'Buffering…'
                 : ' '}
@@ -105,30 +86,10 @@ function StreamingPlayer({ title, audioUrl }: { title: string; audioUrl: string 
         </View>
       </View>
       {failed ? (
-        <Text style={[styles.caption, { color: Colors.stone }]}>
+        <Text style={[styles.caption, { color: timeColor }]}>
           Audio unavailable. Check your connection and tap play to retry.
         </Text>
       ) : null}
-    </View>
-  );
-}
-
-function DisabledPlayer({ caption }: { caption: string }) {
-  return (
-    <View style={styles.wrap}>
-      <View style={styles.controls}>
-        <Pressable
-          disabled
-          accessibilityRole="button"
-          accessibilityLabel="Play"
-          accessibilityState={{ disabled: true }}
-          accessibilityHint="Audio playback is not available for this confession yet"
-          style={[styles.button, { backgroundColor: Colors.hairline }]}
-        >
-          <Text style={[styles.icon, { color: Colors.stone }]}>▶</Text>
-        </Pressable>
-        <Text style={[styles.caption, { color: Colors.stone }]}>{caption}</Text>
-      </View>
     </View>
   );
 }
@@ -143,7 +104,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  icon: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
+  icon: { fontSize: 18, fontWeight: '700' },
   timing: { flex: 1, gap: Spacing.xs },
   track: { height: 4, borderRadius: 2, overflow: 'hidden' },
   fill: { height: '100%', borderRadius: 2 },
