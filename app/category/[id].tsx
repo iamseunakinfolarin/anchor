@@ -78,7 +78,7 @@ export default function CategoryScreen() {
             titleFace="serif"
             trailing={formatDuration(item.duration_seconds)}
             onPress={() =>
-              router.push({ pathname: '/confession/[id]', params: { id: item.id } })
+              router.push({ pathname: '/confession/[id]', params: { id: item.id, categoryId: id } })
             }
           />
         )}

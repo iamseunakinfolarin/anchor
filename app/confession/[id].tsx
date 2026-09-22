@@ -1,29 +1,37 @@
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { Player } from '@/components/Player';
+import { PlayerHero } from '@/components/PlayerHero';
 import { ScreenState } from '@/components/ScreenState';
 import { ScriptureList } from '@/components/ScriptureList';
-import { formatDuration } from '@/lib/format';
-import { fetchConfession } from '@/lib/queries';
+import { fetchConfession, fetchConfessionsByCategory } from '@/lib/queries';
 import { Colors, Spacing, TypeScale } from '@/lib/theme';
 import { useAsync } from '@/lib/useAsync';
 import { usePlayer } from '@/lib/usePlayer';
 
 export default function ConfessionScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, categoryId } = useLocalSearchParams<{ id: string; categoryId?: string }>();
+  const router = useRouter();
 
-  const load = useCallback(() => fetchConfession(id), [id]);
+  const load = useCallback(async () => {
+    // The category's ordered list is fetched only when we know which category
+    // this confession was opened from — a confession can belong to more than
+    // one, so "previous/next" only makes sense relative to that one list.
+    const [confession, siblings] = await Promise.all([
+      fetchConfession(id),
+      categoryId ? fetchConfessionsByCategory(categoryId) : Promise.resolve(null),
+    ]);
+    return { confession, siblings };
+  }, [id, categoryId]);
   const state = useAsync(load);
-  const confession = state.status === 'success' ? state.data : null;
+  const confession = state.status === 'success' ? state.data.confession : null;
 
-  // Called unconditionally, before any early return below, and with stable
-  // fallback args while loading. This is the one thing that must never move:
-  // if the paper/ink branches further down were allowed to remount this hook,
-  // switching state would restart the stream mid-playback. See lib/usePlayer.ts.
+  // Called unconditionally, before any early return below, with stable
+  // fallback args while loading. Nothing in this screen ever swaps this
+  // hook's position in the tree, so the live audio connection is never
+  // interrupted by a re-render.
   const player = usePlayer(confession?.audio_url ?? null, confession?.title ?? '');
-  const isPlaying = player.playing;
 
   if (state.status === 'loading') return <ScreenState kind="loading" />;
   if (state.status === 'error') return <ScreenState kind="error" error={state.error} onRetry={state.reload} />;
@@ -37,145 +45,56 @@ export default function ConfessionScreen() {
     );
   }
 
-  const duration = formatDuration(confession.duration_seconds);
+  const siblings = state.data.siblings;
+  const index = siblings?.findIndex((c) => c.id === confession.id) ?? -1;
+  const previousId = siblings && index > 0 ? siblings[index - 1].id : null;
+  const nextId = siblings && index !== -1 && index < siblings.length - 1 ? siblings[index + 1].id : null;
+
+  const goTo = (nextConfessionId: string) => {
+    // replace, not push — tapping next repeatedly shouldn't grow an
+    // ever-longer back stack; back should return to the category list.
+    router.replace({ pathname: '/confession/[id]', params: { id: nextConfessionId, categoryId } });
+  };
+
   const firstReference = confession.scriptures[0]?.reference ?? null;
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          // The dominant title already lives on-screen while playing; the
-          // header keeps only a dark-tinted back affordance so navigation
-          // never disappears.
-          title: isPlaying ? '' : confession.title,
-          headerStyle: { backgroundColor: isPlaying ? Colors.ink : Colors.paper },
-          headerTintColor: isPlaying ? Colors.paper : Colors.ink,
-        }}
-      />
-      <View style={[styles.screen, { backgroundColor: isPlaying ? Colors.ink : Colors.paper }]}>
-        {isPlaying ? (
-          <PlayingContent
-            title={confession.title}
-            description={confession.description}
-            reference={firstReference}
-            player={player}
-          />
-        ) : (
-          <NotPlayingContent
-            title={confession.title}
-            duration={duration}
-            description={confession.description}
-            scriptures={confession.scriptures}
-            player={player}
-          />
-        )}
-      </View>
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScrollView style={styles.screen} contentContainerStyle={styles.scrollContent}>
+        <PlayerHero
+          confessionId={confession.id}
+          title={confession.title}
+          reference={firstReference}
+          player={player}
+          onBack={() => router.back()}
+          onPrevious={previousId ? () => goTo(previousId) : null}
+          onNext={nextId ? () => goTo(nextId) : null}
+        />
+
+        <View style={styles.paper}>
+          {confession.description ? (
+            <>
+              <Text style={styles.sectionHeading}>Confession</Text>
+              <Text style={styles.description}>{confession.description}</Text>
+            </>
+          ) : null}
+          <ScriptureList scriptures={confession.scriptures} />
+        </View>
+      </ScrollView>
     </>
   );
 }
 
-/** Unchanged from before this phase, only re-plumbed onto the shared hook. */
-function NotPlayingContent({
-  title,
-  duration,
-  description,
-  scriptures,
-  player,
-}: {
-  title: string;
-  duration: string | null;
-  description: string | null;
-  scriptures: import('@/lib/types').Scripture[];
-  player: import('@/lib/usePlayer').PlayerState;
-}) {
-  return (
-    <ScrollView
-      style={{ backgroundColor: Colors.paper }}
-      contentContainerStyle={styles.content}
-      contentInsetAdjustmentBehavior="automatic"
-    >
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: Colors.ink }]} accessibilityRole="header">
-          {title}
-        </Text>
-        {duration ? <Text style={[styles.meta, { color: Colors.stone }]}>{duration}</Text> : null}
-      </View>
-
-      <Player {...player} variant="light" />
-
-      {description ? (
-        <Text style={[styles.description, { color: Colors.ink }]}>{description}</Text>
-      ) : null}
-
-      <ScriptureList scriptures={scriptures} />
-    </ScrollView>
-  );
-}
-
-/**
- * The declaration screen. Title dominates in beacon caps, the confession's
- * own words follow in paper on ink, and the reference sits small and quiet
- * beneath. Space below the reference is left open for loop and sleep-timer
- * controls in a later phase — nothing is added there now.
- */
-function PlayingContent({
-  title,
-  description,
-  reference,
-  player,
-}: {
-  title: string;
-  description: string | null;
-  reference: string | null;
-  player: import('@/lib/usePlayer').PlayerState;
-}) {
-  return (
-    <ScrollView
-      style={{ backgroundColor: Colors.ink }}
-      contentContainerStyle={styles.playingContent}
-    >
-      <Text style={styles.playingTitle} accessibilityRole="header">
-        {title}
-      </Text>
-      {description ? <Text style={styles.playingBody}>{description}</Text> : null}
-      {reference ? <Text style={styles.playingReference}>{reference}</Text> : null}
-
-      <View style={styles.reserved} />
-
-      <Player {...player} variant="dark" />
-    </ScrollView>
-  );
-}
-
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
-  content: { padding: Spacing.md, paddingBottom: Spacing.xl, gap: Spacing.lg },
-  header: { gap: Spacing.xs },
-  title: { fontSize: 28, fontWeight: '700', lineHeight: 34 },
-  meta: { fontSize: 14, fontVariant: ['tabular-nums'] },
-  description: { fontSize: 17, lineHeight: 26 },
-
-  playingContent: {
-    flexGrow: 1,
+  screen: { flex: 1, backgroundColor: Colors.ink },
+  scrollContent: { flexGrow: 1 },
+  paper: {
+    backgroundColor: Colors.paper,
     padding: Spacing.lg,
-    paddingTop: Spacing.xxl,
     paddingBottom: Spacing.xl,
+    gap: Spacing.lg,
   },
-  playingTitle: {
-    ...TypeScale.playingTitle,
-    color: Colors.beacon,
-    textTransform: 'uppercase',
-    marginBottom: Spacing.lg,
-  },
-  playingBody: {
-    ...TypeScale.playingBody,
-    color: Colors.paper,
-    marginBottom: Spacing.lg,
-  },
-  playingReference: {
-    ...TypeScale.playingReference,
-    color: Colors.stone,
-  },
-  // Reserved for a loop toggle and sleep timer in a later phase.
-  reserved: { flexGrow: 1, minHeight: Spacing.xxl },
+  sectionHeading: { ...TypeScale.eyebrow, color: Colors.stone },
+  description: { fontSize: 17, lineHeight: 26, color: Colors.ink, marginTop: -Spacing.sm },
 });
