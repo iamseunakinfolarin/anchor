@@ -39,3 +39,25 @@ db/seeds/       categories, sample confessions, scriptures
 ```
 
 All categories, confessions and scriptures are read live from Supabase; none are hardcoded in the app.
+
+## Adding a cover
+
+Covers are bundled textures in `assets/covers`, assigned to each confession and category by hashing its id, so the same item always gets the same cover.
+
+1. Export the texture as a square JPEG, about 1080 px and about 300 KB. No faces, no stock photos.
+2. Save it as the next number in sequence, for example `assets/covers/cover-06.jpg`.
+3. Append it to the end of the `COVERS` array in `lib/covers.ts`. Never insert in the middle.
+4. Reload the app.
+
+Adding a cover changes the modulo, so most items move to a different cover. That's fine before launch; after launch, note it in the release.
+
+## Data scripts (local only)
+
+| Command | What it does |
+|---|---|
+| `npm run db:apply` | Applies migrations and idempotent seeds |
+| `npm run db:backfill-durations` | Reads real audio length for published confessions missing a duration, and saves it |
+| `npm run db:verify` | With only the anon key: reads work, writes are rejected |
+
+All three read `SUPABASE_DB_URL` or the anon key from the gitignored `.env`. None of them ship with the app.
+

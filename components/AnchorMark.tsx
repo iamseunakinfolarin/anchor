@@ -24,11 +24,11 @@ const PATH =
 interface AnchorMarkProps {
   /** Rendered height in px. Width follows the mark's 100:122 ratio. */
   size?: number;
-  /** Any color token value. Defaults to ink, for light backgrounds. */
+  /** Any color token value. Defaults to onSurface. */
   color?: string;
 }
 
-export function AnchorMark({ size = 24, color = Colors.ink }: AnchorMarkProps) {
+export function AnchorMark({ size = 24, color = Colors.onSurface }: AnchorMarkProps) {
   return (
     <Svg
       width={(size * VIEW_W) / VIEW_H}

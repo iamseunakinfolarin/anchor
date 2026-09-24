@@ -6,7 +6,7 @@ import { PlayerHero } from '@/components/PlayerHero';
 import { ScreenState } from '@/components/ScreenState';
 import { ScriptureList } from '@/components/ScriptureList';
 import { fetchConfession, fetchConfessionsByCategory } from '@/lib/queries';
-import { Colors, Spacing, TypeScale } from '@/lib/theme';
+import { Colors, Space, Type } from '@/lib/theme';
 import { useAsync } from '@/lib/useAsync';
 import { usePlayer } from '@/lib/usePlayer';
 
@@ -72,7 +72,7 @@ export default function ConfessionScreen() {
           onNext={nextId ? () => goTo(nextId) : null}
         />
 
-        <View style={styles.paper}>
+        <View style={styles.reading}>
           {confession.description ? (
             <>
               <Text style={styles.sectionHeading}>Confession</Text>
@@ -87,14 +87,14 @@ export default function ConfessionScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.ink },
+  screen: { flex: 1, backgroundColor: Colors.inverseSurface },
   scrollContent: { flexGrow: 1 },
-  paper: {
-    backgroundColor: Colors.paper,
-    padding: Spacing.lg,
-    paddingBottom: Spacing.xl,
-    gap: Spacing.lg,
+  reading: {
+    backgroundColor: Colors.surface,
+    padding: Space.lg,
+    paddingBottom: Space.xl,
+    gap: Space.lg,
   },
-  sectionHeading: { ...TypeScale.eyebrow, color: Colors.stone },
-  description: { fontSize: 17, lineHeight: 26, color: Colors.ink, marginTop: -Spacing.sm },
+  sectionHeading: { ...Type.labelSm, color: Colors.outline },
+  description: { ...Type.bodyLg, color: Colors.onSurface, marginTop: -Space.sm },
 });

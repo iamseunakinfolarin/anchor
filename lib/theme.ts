@@ -1,69 +1,148 @@
-import { StyleSheet } from 'react-native';
+/**
+ * Anchor's design tokens — ported from the Stitch export's Tailwind config
+ * (the code.html files in design-reference). The only place a color, radius, spacing
+ * value, type style or shadow is defined. Components never hold raw values.
+ */
+
+/** All 47 color tokens from the export, camelCased, values unchanged. */
+export const Colors = {
+  primary: '#b7131a',
+  onPrimary: '#ffffff',
+  primaryContainer: '#db322f',
+  onPrimaryContainer: '#fffbff',
+  primaryFixed: '#ffdad6',
+  primaryFixedDim: '#ffb4ac',
+  onPrimaryFixed: '#410002',
+  onPrimaryFixedVariant: '#93000d',
+  inversePrimary: '#ffb4ac',
+  surfaceTint: '#bb171c',
+
+  secondary: '#b51925',
+  onSecondary: '#ffffff',
+  secondaryContainer: '#d8363a',
+  onSecondaryContainer: '#fffbff',
+  secondaryFixed: '#ffdad7',
+  secondaryFixedDim: '#ffb3ae',
+  onSecondaryFixed: '#410004',
+  onSecondaryFixedVariant: '#930015',
+
+  tertiary: '#675859',
+  onTertiary: '#ffffff',
+  tertiaryContainer: '#817171',
+  onTertiaryContainer: '#fffbff',
+  tertiaryFixed: '#f2dede',
+  tertiaryFixedDim: '#d5c2c2',
+  onTertiaryFixed: '#241919',
+  onTertiaryFixedVariant: '#514344',
+
+  surface: '#f7f9ff',
+  surfaceDim: '#d7dadf',
+  surfaceBright: '#f7f9ff',
+  surfaceContainerLowest: '#ffffff',
+  surfaceContainerLow: '#f1f4f9',
+  surfaceContainer: '#ebeef3',
+  surfaceContainerHigh: '#e5e8ed',
+  surfaceContainerHighest: '#e0e3e8',
+  surfaceVariant: '#e0e3e8',
+  onSurface: '#181c20',
+  onSurfaceVariant: '#5b403d',
+  inverseSurface: '#2d3135',
+  inverseOnSurface: '#eef1f6',
+  outline: '#906f6c',
+  outlineVariant: '#e4beb9',
+
+  error: '#ba1a1a',
+  onError: '#ffffff',
+  errorContainer: '#ffdad6',
+  onErrorContainer: '#93000a',
+
+  background: '#f7f9ff',
+  onBackground: '#181c20',
+} as const;
 
 /**
- * Anchor's design tokens. Single source of truth.
- * Components must read from here; no hex literals anywhere else.
+ * Translucent values the export expresses as Tailwind opacity modifiers
+ * (bg-surface-container-lowest/95, /80, /90). Kept here so no component
+ * holds an rgba literal.
  */
-export const Colors = {
-  /** Primary text, and the anchor mark on light backgrounds. */
-  ink: '#0B0B0A',
-  /** Background. */
-  paper: '#F6F1E7',
-  /**
-   * The single accent. Sanctioned uses only: the "Today" marker on Home, the
-   * category index numeral on category detail, the confession title while a
-   * confession is playing, and saved-filled state (future). Nowhere else.
-   */
-  beacon: '#E15039',
-  /** Secondary text, metadata. */
-  stone: '#8A8172',
-  /** Dividers, borders. */
-  hairline: '#DED5C4',
+export const Translucent = {
+  tabBar: 'rgba(255,255,255,0.95)',
+  pill: 'rgba(255,255,255,0.8)',
+  tag: 'rgba(255,255,255,0.9)',
+  coverScrimTop: 'rgba(24,28,32,0)',
+  coverScrimBottom: 'rgba(24,28,32,0.72)',
+  /** Player-only (Phase 2 redesigns it): the dark wash over the background image. */
+  playerWash: 'rgba(24,28,32,0.6)',
+  playerWashStrong: 'rgba(24,28,32,0.95)',
+  playerPanel: 'rgba(24,28,32,0.4)',
+  playerMuted: 'rgba(247,249,255,0.28)',
+  playerSubtle: 'rgba(247,249,255,0.72)',
 } as const;
 
-export type ColorToken = keyof typeof Colors;
-
-/** Font families, as registered by useFonts in the root layout. */
-export const Fonts = {
-  display: 'Fraunces_400Regular',
-  displayMedium: 'Fraunces_500Medium',
-  /** Only for the playing-state confession title: the one place a heavy serif weight is wanted. */
-  displayBold: 'Fraunces_700Bold',
-  ui: 'Inter_400Regular',
-  uiMedium: 'Inter_500Medium',
-  uiSemiBold: 'Inter_600SemiBold',
-  /** Only for the playing-state confession text. */
-  uiBold: 'Inter_700Bold',
+/**
+ * Radius scale: DEFAULT 16, lg 32, xl 48, full. `inner` (20) is the one
+ * named exception: the cover image inside a 32px category card, which keeps
+ * the nested-corner look (outer radius minus the card's 12px padding).
+ */
+export const Radius = {
+  base: 16,
+  inner: 20,
+  lg: 32,
+  xl: 48,
+  full: 9999,
 } as const;
 
-/** 8pt-derived rhythm, generous at the top end for the single-column layout. */
-export const Spacing = {
+export const Space = {
   xs: 4,
   sm: 8,
   md: 16,
   lg: 24,
   xl: 32,
-  xxl: 48,
+  gutter: 16,
+  margin: 20,
+} as const;
+
+/** React Native ignores fontWeight once a named family is set, so each weight is its own family. */
+export const Font = {
+  regular: 'PlusJakartaSans_400Regular',
+  medium: 'PlusJakartaSans_500Medium',
+  semibold: 'PlusJakartaSans_600SemiBold',
+  bold: 'PlusJakartaSans_700Bold',
+} as const;
+
+export const Type = {
+  headlineXl: { fontFamily: Font.bold, fontSize: 34, lineHeight: 42 },
+  headlineLg: { fontFamily: Font.bold, fontSize: 26, lineHeight: 34 },
+  headlineMd: { fontFamily: Font.semibold, fontSize: 20, lineHeight: 28 },
+  headlineSm: { fontFamily: Font.semibold, fontSize: 17, lineHeight: 24 },
+  bodyLg: { fontFamily: Font.medium, fontSize: 16, lineHeight: 24 },
+  bodyMd: { fontFamily: Font.regular, fontSize: 14, lineHeight: 20 },
+  bodySm: { fontFamily: Font.regular, fontSize: 12, lineHeight: 16 },
+  labelLg: { fontFamily: Font.semibold, fontSize: 15, lineHeight: 20 },
+  labelMd: { fontFamily: Font.medium, fontSize: 13, lineHeight: 18 },
+  /** 0.04em at 11px. */
+  labelSm: { fontFamily: Font.semibold, fontSize: 11, lineHeight: 14, letterSpacing: 0.44 },
 } as const;
 
 /**
- * Type scale. Serif for confession titles and scripture references,
- * sans for labels, durations and navigation.
+ * Two shadow families, as React Native boxShadow (New Architecture):
+ * neutral elevation for surfaces, primary-red glow for interactive and
+ * playing elements. Values exactly as specified from the export.
  */
-export const TypeScale = {
-  wordmark: { fontFamily: Fonts.displayMedium, fontSize: 22, lineHeight: 28 },
-  title: { fontFamily: Fonts.display, fontSize: 26, lineHeight: 33 },
-  rowTitle: { fontFamily: Fonts.display, fontSize: 18, lineHeight: 24 },
-  rowLabel: { fontFamily: Fonts.ui, fontSize: 16, lineHeight: 22 },
-  body: { fontFamily: Fonts.ui, fontSize: 16, lineHeight: 24 },
-  meta: { fontFamily: Fonts.ui, fontSize: 13, lineHeight: 18 },
-  eyebrow: { fontFamily: Fonts.uiMedium, fontSize: 12, lineHeight: 16, letterSpacing: 0.8 },
-  /** Confession title while playing: the dominant element on the screen. Pair with textTransform: 'uppercase'. */
-  playingTitle: { fontFamily: Fonts.displayBold, fontSize: 34, lineHeight: 40, letterSpacing: 0.3 },
-  /** The confession's spoken text while playing. */
-  playingBody: { fontFamily: Fonts.uiBold, fontSize: 22, lineHeight: 34 },
-  /** The single scripture reference shown while playing: small and quiet. */
-  playingReference: { fontFamily: Fonts.display, fontSize: 14, lineHeight: 20 },
+export const Shadow = {
+  header: { boxShadow: '0px 1px 8px rgba(43,47,51,0.03)' },
+  card: { boxShadow: '0px 8px 24px rgba(43,47,51,0.04)' },
+  raised: { boxShadow: '0px 16px 36px rgba(43,47,51,0.06)' },
+  dock: { boxShadow: '0px -8px 30px rgba(43,47,51,0.06)' },
+  glowSm: { boxShadow: '0px 4px 12px rgba(183,19,26,0.25)' },
+  glowMd: { boxShadow: '0px 6px 16px rgba(183,19,26,0.35)' },
+  glowLg: { boxShadow: '0px 12px 28px rgba(183,19,26,0.38)' },
 } as const;
 
-export const HairlineWidth = StyleSheet.hairlineWidth;
+/** Layout constants shared across screens. */
+export const Layout = {
+  headerHeight: 64,
+  tabBarHeight: 64,
+  /** Scroll content clears the floating tab bar. */
+  tabBarClearance: 112,
+} as const;

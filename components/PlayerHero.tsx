@@ -3,7 +3,7 @@ import { ImageBackground, Pressable, StyleSheet, Text, View } from 'react-native
 
 import { Waveform } from '@/components/Waveform';
 import { formatDuration } from '@/lib/format';
-import { Colors, Spacing, TypeScale } from '@/lib/theme';
+import { Colors, Radius, Space, Translucent, Type } from '@/lib/theme';
 import type { PlayerState } from '@/lib/usePlayer';
 
 const BACKGROUND = require('@/assets/player-background.jpg');
@@ -21,9 +21,8 @@ interface PlayerHeroProps {
 /**
  * The full-bleed now-playing screen: background image, dark gradient rising
  * from the bottom third, a translucent info card, a waveform, and transport
- * controls. Deliberately breaks the app's flat, hairline-and-ink language —
- * a scoped exception for this one immersive screen, the same restraint
- * Spotify and Apple Music keep for their own player screen.
+ * controls. Layout unchanged since the previous phase; only its tokens were
+ * swapped for the Stitch system. Phase 2 redesigns this screen.
  */
 export function PlayerHero({
   confessionId,
@@ -47,7 +46,7 @@ export function PlayerHero({
   return (
     <ImageBackground source={BACKGROUND} style={styles.hero} resizeMode="cover">
       <LinearGradient
-        colors={['transparent', 'rgba(11,11,10,0.6)', 'rgba(11,11,10,0.95)']}
+        colors={[Translucent.coverScrimTop, Translucent.playerWash, Translucent.playerWashStrong]}
         locations={[0, 0.38, 0.68]}
         style={StyleSheet.absoluteFill}
       />
@@ -72,8 +71,8 @@ export function PlayerHero({
         <Waveform
           seed={confessionId}
           progress={player.progress}
-          activeColor={Colors.beacon}
-          mutedColor="rgba(246,241,231,0.28)"
+          activeColor={Colors.primary}
+          mutedColor={Translucent.playerMuted}
         />
 
         <View style={styles.times}>
@@ -148,64 +147,64 @@ const styles = StyleSheet.create({
   hero: { height: HERO_HEIGHT, width: '100%' },
   backButton: {
     position: 'absolute',
-    top: Spacing.xl,
-    left: Spacing.md,
+    top: Space.xl,
+    left: Space.md,
     width: 36,
     height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(11,11,10,0.45)',
+    borderRadius: Radius.full,
+    backgroundColor: Translucent.playerPanel,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 2,
   },
-  backIcon: { color: Colors.paper, fontSize: 20, fontWeight: '600' },
+  backIcon: { ...Type.headlineMd, color: Colors.surface },
   bottom: {
     marginTop: 'auto',
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.xl,
-    gap: Spacing.md,
+    paddingHorizontal: Space.lg,
+    paddingBottom: Space.xl,
+    gap: Space.md,
   },
   card: {
-    backgroundColor: 'rgba(11,11,10,0.4)',
-    borderRadius: 16,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.lg,
-    gap: Spacing.xs,
+    backgroundColor: Translucent.playerPanel,
+    borderRadius: Radius.base,
+    paddingVertical: Space.md,
+    paddingHorizontal: Space.lg,
+    gap: Space.xs,
   },
-  cardTitle: { ...TypeScale.rowTitle, color: Colors.paper, fontWeight: '700' },
-  cardReference: { ...TypeScale.meta, color: '#C9C2B4' },
+  cardTitle: { ...Type.headlineSm, fontFamily: Type.headlineLg.fontFamily, color: Colors.surface },
+  cardReference: { ...Type.labelMd, color: Translucent.playerSubtle },
   times: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
   timeText: {
-    ...TypeScale.meta,
-    color: '#C9C2B4',
+    ...Type.labelMd,
+    color: Translucent.playerSubtle,
     fontVariant: ['tabular-nums'],
   },
   transport: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: Spacing.xl,
-    marginTop: Spacing.xs,
+    gap: Space.xl,
+    marginTop: Space.xs,
   },
   smallButton: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(11,11,10,0.4)',
+    borderRadius: Radius.full,
+    backgroundColor: Translucent.playerPanel,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  smallIcon: { color: Colors.paper, fontSize: 14 },
+  smallIcon: { ...Type.labelMd, color: Colors.surface },
   playButton: {
     width: 60,
     height: 60,
-    borderRadius: 30,
-    backgroundColor: Colors.beacon,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  playIcon: { color: '#FFFFFF', fontSize: 20, fontWeight: '700' },
+  playIcon: { ...Type.headlineMd, fontFamily: Type.headlineLg.fontFamily, color: Colors.onPrimary },
 });

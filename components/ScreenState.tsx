@@ -1,7 +1,7 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ConfigError } from '@/lib/queries';
-import { Colors, HairlineWidth, Spacing, TypeScale } from '@/lib/theme';
+import { Colors, Radius, Shadow, Space, Type } from '@/lib/theme';
 
 type Props =
   | { kind: 'loading' }
@@ -13,7 +13,7 @@ export function ScreenState(props: Props) {
   if (props.kind === 'loading') {
     return (
       <View style={styles.container} accessibilityRole="progressbar">
-        <ActivityIndicator size="large" color={Colors.stone} />
+        <ActivityIndicator size="large" color={Colors.primary} />
       </View>
     );
   }
@@ -30,15 +30,13 @@ export function ScreenState(props: Props) {
   const isConfig = props.error instanceof ConfigError;
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>
-        {isConfig ? 'Supabase is not configured' : 'Something went wrong'}
-      </Text>
+      <Text style={styles.title}>{isConfig ? 'Supabase is not configured' : 'Something went wrong'}</Text>
       <Text style={styles.message}>{props.error.message}</Text>
       {!isConfig && props.onRetry ? (
         <Pressable
           onPress={props.onRetry}
           accessibilityRole="button"
-          style={({ pressed }) => [styles.button, pressed ? styles.pressed : null]}
+          style={({ pressed }) => [styles.button, pressed && styles.pressed]}
         >
           <Text style={styles.buttonText}>Try again</Text>
         </Pressable>
@@ -52,19 +50,21 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: Spacing.lg,
-    gap: Spacing.sm,
-    backgroundColor: Colors.paper,
+    padding: Space.lg,
+    gap: Space.sm,
+    backgroundColor: Colors.surface,
   },
-  title: { ...TypeScale.rowTitle, color: Colors.ink, textAlign: 'center' },
-  message: { ...TypeScale.body, color: Colors.stone, textAlign: 'center', maxWidth: 320 },
+  title: { ...Type.headlineSm, color: Colors.onSurface, textAlign: 'center' },
+  message: { ...Type.bodyMd, color: Colors.tertiary, textAlign: 'center', maxWidth: 320 },
   button: {
-    marginTop: Spacing.md,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm + 2,
-    borderWidth: HairlineWidth,
-    borderColor: Colors.ink,
+    marginTop: Space.md,
+    paddingHorizontal: Space.lg,
+    height: 44,
+    justifyContent: 'center',
+    borderRadius: Radius.full,
+    backgroundColor: Colors.primary,
+    ...Shadow.glowSm,
   },
-  pressed: { backgroundColor: Colors.hairline },
-  buttonText: { ...TypeScale.rowLabel, color: Colors.ink },
+  pressed: { transform: [{ scale: 0.97 }] },
+  buttonText: { ...Type.labelLg, color: Colors.onPrimary },
 });

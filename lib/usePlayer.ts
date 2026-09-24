@@ -18,7 +18,7 @@ export interface PlayerState {
 /**
  * Owns the single expo-audio connection for a confession screen. Call this
  * once, unconditionally, at the top of the screen component — never inside a
- * conditional branch of the paper/ink layout, or switching layouts would
+ * conditional branch of the screen's layout, or switching layouts would
  * unmount this hook and kill the live stream mid-playback.
  *
  * Pass null/empty when the confession hasn't loaded yet or has no audio;

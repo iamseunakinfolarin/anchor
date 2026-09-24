@@ -1,115 +1,114 @@
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { ListRow, RowDivider } from '@/components/ListRow';
+import { ConfessionRow } from '@/components/ConfessionRow';
+import { CoverArt } from '@/components/CoverArt';
+import { Icon } from '@/components/Icon';
 import { ScreenState } from '@/components/ScreenState';
-import { formatDuration, toRoman } from '@/lib/format';
-import { fetchCategory, fetchConfessionsByCategory } from '@/lib/queries';
-import { Colors, Spacing, TypeScale } from '@/lib/theme';
-import type { Category } from '@/lib/types';
-import { useAsync } from '@/lib/useAsync';
+import { StackHeader } from '@/components/StackHeader';
+import { confessionsIn } from '@/lib/catalog';
+import { totalSeconds, wholeMinutes } from '@/lib/format';
+import { openPlayer } from '@/lib/navigation';
+import { Colors, Radius, Shadow, Space, Type } from '@/lib/theme';
+import { useCatalog } from '@/lib/useCatalog';
 
-/**
- * The category's own rank among all 14, in beacon, beside its name. Rendered
- * only once the category has loaded, since the numeral comes from
- * category.sort_order; before that the plain name paints instantly instead.
- */
-function CategoryHeaderTitle({ category, fallbackName }: { category: Category | null; fallbackName: string }) {
-  if (!category) {
-    return <Text style={styles.headerName}>{fallbackName}</Text>;
-  }
-  return (
-    <Text style={styles.headerTitle} numberOfLines={1}>
-      <Text style={styles.headerRoman}>{toRoman(category.sort_order)}</Text>
-      <Text style={styles.headerDot}> · </Text>
-      <Text style={styles.headerName}>{category.name}</Text>
-    </Text>
-  );
-}
-
+/** Category detail, styled from the export's Playlist screen. */
 export default function CategoryScreen() {
-  const { id, name } = useLocalSearchParams<{ id: string; name?: string }>();
+  const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-
-  const load = useCallback(async () => {
-    const [category, confessions] = await Promise.all([
-      fetchCategory(id),
-      fetchConfessionsByCategory(id),
-    ]);
-    return { category, confessions };
-  }, [id]);
-  const state = useAsync(load);
-
-  const category = state.status === 'success' ? state.data.category : null;
+  const state = useCatalog();
 
   let body;
+  let title = '';
   if (state.status === 'loading') {
     body = <ScreenState kind="loading" />;
   } else if (state.status === 'error') {
     body = <ScreenState kind="error" error={state.error} onRetry={state.reload} />;
-  } else if (!category) {
-    body = (
-      <ScreenState
-        kind="empty"
-        title="Category not found"
-        message="This category may have been removed."
-      />
-    );
-  } else if (state.data.confessions.length === 0) {
-    body = (
-      <ScreenState
-        kind="empty"
-        title="No confessions in this category yet"
-        message="Check back soon."
-      />
-    );
   } else {
-    body = (
-      <FlatList
-        data={state.data.confessions}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item, index }) => (
-          <ListRow
-            leading={
-              <Text style={styles.liturgyNumber}>{`No. ${String(index + 1).padStart(2, '0')}`}</Text>
-            }
-            title={item.title}
-            titleFace="serif"
-            trailing={formatDuration(item.duration_seconds)}
-            onPress={() =>
-              router.push({ pathname: '/confession/[id]', params: { id: item.id, categoryId: id } })
-            }
-          />
-        )}
-        ItemSeparatorComponent={RowDivider}
-        contentContainerStyle={styles.list}
-        style={styles.screen}
-      />
-    );
+    const catalog = state.data;
+    const category = catalog.categories.find((c) => c.id === id);
+    if (!category) {
+      // Unknown id, or a category with no published confessions (hidden everywhere).
+      body = (
+        <ScreenState kind="empty" title="Nothing here yet" message="This category has no published confessions." />
+      );
+    } else {
+      title = category.name;
+      const items = confessionsIn(catalog, category.id);
+      // Shown only when every duration is known; a partial sum would be invented.
+      const total = totalSeconds(items.map((c) => c.duration_seconds));
+      const label = [
+        'Scripture Meditations',
+        `${category.count} ${category.count === 1 ? 'Declaration' : 'Declarations'}`,
+        total !== null ? `${wholeMinutes(total)} min` : null,
+      ]
+        .filter(Boolean)
+        .join(' • ');
+
+      body = (
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          <View style={styles.hero}>
+            <CoverArt id={category.id} aspectRatio={16 / 10} radius={Radius.lg} />
+            <View style={styles.heroText}>
+              <Text style={styles.name} accessibilityRole="header">
+                {category.name}
+              </Text>
+              <Text style={styles.label}>{label}</Text>
+            </View>
+            <Pressable
+              onPress={() => items[0] && openPlayer(router, items[0].id, category.id)}
+              accessibilityRole="button"
+              accessibilityLabel={`Play all ${category.name}`}
+              style={({ pressed }) => [styles.playAll, pressed && styles.pressed]}
+            >
+              <Icon name="play-arrow" size={24} color={Colors.onPrimary} />
+              <Text style={styles.playAllText}>Play all</Text>
+            </Pressable>
+          </View>
+
+          <View>
+            {items.map((c) => (
+              <ConfessionRow
+                key={c.id}
+                id={c.id}
+                title={c.title}
+                durationSeconds={c.duration_seconds}
+                reference={c.scriptures[0]?.reference ?? null}
+                onPlay={() => openPlayer(router, c.id, category.id)}
+              />
+            ))}
+          </View>
+        </ScrollView>
+      );
+    }
   }
 
   return (
-    <>
-      <Stack.Screen
-        options={{ headerTitle: () => <CategoryHeaderTitle category={category} fallbackName={name ?? ''} /> }}
-      />
-      <View style={styles.screen}>{body}</View>
-    </>
+    <View style={styles.screen}>
+      <StackHeader title={title} onBack={() => router.back()} />
+      {body}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.paper },
-  list: { paddingTop: Spacing.sm, paddingBottom: Spacing.xxl },
-  headerTitle: { flexShrink: 1 },
-  headerRoman: { ...TypeScale.rowLabel, color: Colors.beacon, fontWeight: '700' },
-  headerDot: { ...TypeScale.rowLabel, color: Colors.hairline },
-  headerName: { ...TypeScale.rowLabel, color: Colors.ink },
-  liturgyNumber: {
-    ...TypeScale.meta,
-    color: Colors.stone,
-    fontVariant: ['tabular-nums'],
-    width: 52,
+  screen: { flex: 1, backgroundColor: Colors.surface },
+  content: { paddingHorizontal: Space.margin, paddingTop: Space.md, paddingBottom: Space.xl, gap: Space.lg },
+  hero: { gap: Space.md },
+  heroText: { gap: Space.xs },
+  name: { ...Type.headlineLg, color: Colors.onSurface },
+  label: { ...Type.bodySm, color: Colors.tertiary },
+  playAll: {
+    alignSelf: 'flex-start',
+    height: 52,
+    paddingHorizontal: Space.lg,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Space.sm,
+    ...Shadow.glowLg,
   },
+  pressed: { transform: [{ scale: 0.97 }] },
+  playAllText: { ...Type.labelLg, color: Colors.onPrimary },
 });

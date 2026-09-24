@@ -13,10 +13,10 @@ A user can discover a confession and play it. Nothing may break that.
 - All colors, radii, spacing, type and shadows come from `lib/theme.ts`. No inline values.
 - Primary `#b7131a` is the only accent. Background `#f7f9ff`, cards `#ffffff`.
 - Font: Plus Jakarta Sans only.
-- Radius scale: 16 / 32 / 48 / full.
+- Radius scale: 16 / 32 / 48 / full, plus one named exception: `Radius.inner` (20) for the cover inside a 32px category card, which keeps the nested-corner look.
 - Two shadow families: neutral elevation (rgba 43,47,51) for surfaces; primary-red glow (rgba 183,19,26) for interactive and playing elements. Use React Native `boxShadow`.
 - Cover art: bundled textures in `/assets/covers`, assigned deterministically by id. No faces, no stock photos.
-- Bottom navigation is fixed on every screen: Home, Categories, Saved, Settings.
+- The bottom navigation always has exactly four tabs: Home, Categories, Saved, Settings. Detail screens and the player push over the tab bar.
 
 ## Product truth
 
@@ -52,10 +52,12 @@ The expo-audio config plugin in app.json (`enableBackgroundPlayback: true`, `rec
 
 ## Layout
 
-- `app/` routes: `index` (Home), `category/[id]`, `confession/[id]` (player)
-- `components/`: `AnchorMark`, `CategoryMedallion`, `ListRow` + `RowDivider`, `TodayCard`, `PlayerHero`, `Waveform`, `ScriptureList`, `ScreenState`
-- `lib/`: supabase client, queries, types, theme tokens, audio session, `usePlayer`
-- `db/`: migrations, seeds (idempotent), `apply.mjs`, `verify-rls.mjs`
+- `app/(tabs)/`: `index` (Home), `categories`, `saved`, `settings` (the last two are Phase 3 placeholders). The tab bar is headless expo-router tabs; on Android, expo-blur blurs a `BlurTargetView` wrapping the screens.
+- Root stack screens that push over the tabs: `category/[id]`, `search`, `confession/[id]` (player, redesigned in Phase 2).
+- `components/`: `AppHeader`, `StackHeader`, `TabButton`, `Icon` (MaterialIcons), `PlayCircle`, `QuickTile`, `TodayFocusCard`, `CollectionTile`, `CategoryCard`, `ConfessionRow`, `SearchPill`, `CoverArt`, `AnchorMark` (header logo), `ScreenState`, `ScriptureList`, and the player's `PlayerHero` + `Waveform`.
+- `lib/`: `theme.ts` (all tokens), `catalog.ts` (counts, Today's Focus, featured category, empty categories dropped), `queries.ts`, `covers.ts` (id-hash cover assignment), `navigation.ts`, `usePlayer.ts`, `audioSession.ts`.
+- `db/`: migrations, idempotent seeds, `apply.mjs`, `verify-rls.mjs`, and `backfill-durations.mjs` (local-only, uses `SUPABASE_DB_URL`).
+- `design-reference/`: the Stitch export, the design source of truth.
 
 ## Definition of done
 

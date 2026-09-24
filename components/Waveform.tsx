@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { hashString } from '@/lib/covers';
+
 const BAR_COUNT = 40;
 const MIN_HEIGHT = 5;
 const MAX_HEIGHT = 30;
@@ -17,18 +19,11 @@ function mulberry32(seed: number) {
   };
 }
 
-function hashSeed(input: string): number {
-  let h = 0;
-  for (let i = 0; i < input.length; i++) {
-    h = (Math.imul(31, h) + input.charCodeAt(i)) | 0;
-  }
-  return h;
-}
 
 interface WaveformProps {
   /** Anything stable per confession, e.g. its id — the same seed always draws the same bars. */
   seed: string;
-  /** 0 to 1: bars up to this fraction render in beacon, the rest muted. */
+  /** 0 to 1: bars up to this fraction render in the active color, the rest muted. */
   progress: number;
   activeColor: string;
   mutedColor: string;
@@ -41,7 +36,7 @@ interface WaveformProps {
  */
 export function Waveform({ seed, progress, activeColor, mutedColor }: WaveformProps) {
   const heights = useMemo(() => {
-    const rand = mulberry32(hashSeed(seed));
+    const rand = mulberry32(hashString(seed));
     return Array.from({ length: BAR_COUNT }, () => MIN_HEIGHT + rand() * (MAX_HEIGHT - MIN_HEIGHT));
   }, [seed]);
 

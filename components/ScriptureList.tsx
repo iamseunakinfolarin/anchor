@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { Colors, HairlineWidth, Spacing, TypeScale } from '@/lib/theme';
+import { Colors, Radius, Shadow, Space, Type } from '@/lib/theme';
 import type { Scripture } from '@/lib/types';
 
 /** Only these translations are licensed for display; anything else hides the verse text. */
@@ -34,16 +34,17 @@ export function ScriptureList({ scriptures }: { scriptures: Scripture[] }) {
 }
 
 const styles = StyleSheet.create({
-  section: { gap: Spacing.md },
-  heading: { ...TypeScale.eyebrow, color: Colors.stone },
-  empty: { ...TypeScale.body, color: Colors.stone },
+  section: { gap: Space.md },
+  heading: { ...Type.labelSm, color: Colors.outline },
+  empty: { ...Type.bodyMd, color: Colors.tertiary },
   item: {
-    gap: Spacing.xs,
-    paddingTop: Spacing.md,
-    borderTopWidth: HairlineWidth,
-    borderTopColor: Colors.hairline,
+    gap: Space.xs,
+    padding: Space.md,
+    borderRadius: Radius.base,
+    backgroundColor: Colors.surfaceContainerLowest,
+    ...Shadow.card,
   },
-  reference: { ...TypeScale.rowTitle, color: Colors.ink },
-  version: { ...TypeScale.meta, color: Colors.stone },
-  verse: { ...TypeScale.body, color: Colors.ink },
+  reference: { ...Type.headlineSm, color: Colors.onSurface },
+  version: { ...Type.bodySm, color: Colors.tertiary },
+  verse: { ...Type.bodyMd, color: Colors.onSurface },
 });

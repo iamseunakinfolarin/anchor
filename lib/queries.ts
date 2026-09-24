@@ -1,6 +1,7 @@
 import { isConfigured, MISSING_CONFIG_MESSAGE } from '@/lib/env';
 import { supabase } from '@/lib/supabase';
-import type { Category, ConfessionWithScriptures } from '@/lib/types';
+import { buildCatalog, type Catalog, type CatalogConfession } from '@/lib/catalog';
+import type { ConfessionWithScriptures } from '@/lib/types';
 
 type ConfessionListRow = ConfessionWithScriptures & {
   confession_categories: { category_id: string }[];
@@ -15,25 +16,6 @@ export class ConfigError extends Error {
 
 function assertConfigured(): void {
   if (!isConfigured) throw new ConfigError();
-}
-
-/** All categories, in display order. */
-export async function fetchCategories(): Promise<Category[]> {
-  assertConfigured();
-  const { data, error } = await supabase
-    .from('categories')
-    .select('*')
-    .order('sort_order', { ascending: true });
-  if (error) throw new Error(error.message);
-  return data;
-}
-
-/** One category by id, or null when it does not exist. */
-export async function fetchCategory(id: string): Promise<Category | null> {
-  assertConfigured();
-  const { data, error } = await supabase.from('categories').select('*').eq('id', id).maybeSingle();
-  if (error) throw new Error(error.message);
-  return data;
 }
 
 /**
@@ -72,24 +54,30 @@ export async function fetchConfession(id: string): Promise<ConfessionWithScriptu
 }
 
 /**
- * The confession shown in Home's "Today" module.
- *
- * Daily rotation is not built yet, so this picks deterministically by day of
- * year across published confessions in sort order. Read-only: no schema, policy
- * or write involved, and it changes once a day without any scheduled job.
+ * Everything the browse screens need in two requests: categories, and every
+ * published confession with its scriptures and category links. RLS only
+ * exposes published confessions and their links to the anon key, so counts
+ * derived from this are real published counts.
  */
-export async function fetchDailyConfession(): Promise<ConfessionWithScriptures | null> {
+export async function fetchCatalog(): Promise<Catalog> {
   assertConfigured();
-  const { data, error } = await supabase
-    .from('confessions')
-    .select('*, scriptures(*)')
-    .eq('is_published', true)
-    .order('sort_order', { ascending: true })
-    .order('sort_order', { referencedTable: 'scriptures', ascending: true });
-  if (error) throw new Error(error.message);
-  if (data.length === 0) return null;
+  const [categories, confessions] = await Promise.all([
+    supabase.from('categories').select('*').order('sort_order', { ascending: true }),
+    supabase
+      .from('confessions')
+      .select('*, scriptures(*), confession_categories(category_id)')
+      .eq('is_published', true)
+      .order('sort_order', { ascending: true })
+      .order('sort_order', { referencedTable: 'scriptures', ascending: true }),
+  ]);
+  if (categories.error) throw new Error(categories.error.message);
+  if (confessions.error) throw new Error(confessions.error.message);
 
-  const startOfYear = Date.UTC(new Date().getUTCFullYear(), 0, 0);
-  const dayOfYear = Math.floor((Date.now() - startOfYear) / 86_400_000);
-  return data[dayOfYear % data.length] ?? null;
+  const rows = (confessions.data as ConfessionListRow[]).map(
+    ({ confession_categories: links, ...confession }): CatalogConfession => ({
+      ...confession,
+      categoryIds: links.map((l) => l.category_id),
+    }),
+  );
+  return buildCatalog(categories.data, rows);
 }

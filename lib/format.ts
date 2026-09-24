@@ -7,21 +7,37 @@ export function formatDuration(seconds: number | null): string | null {
   return `${minutes}:${rest.toString().padStart(2, '0')}`;
 }
 
-const ROMAN_TABLE: [number, string][] = [
-  [1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'],
-  [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'],
-  [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I'],
-];
+/** 189 -> "03:09", matching the export's mm:ss rows. Null when unknown. */
+export function formatClock(seconds: number | null): string | null {
+  const plain = formatDuration(seconds);
+  if (plain === null) return null;
+  const [m, s] = plain.split(':');
+  return `${m.padStart(2, '0')}:${s}`;
+}
 
-/** 1 -> "I", 14 -> "XIV". Used for the category detail header's index. */
-export function toRoman(n: number): string {
-  let remaining = Math.max(0, Math.floor(n));
-  let out = '';
-  for (const [value, symbol] of ROMAN_TABLE) {
-    while (remaining >= value) {
-      out += symbol;
-      remaining -= value;
-    }
+/** 189 -> 3, never below 1 for a non-empty duration. */
+export function wholeMinutes(seconds: number): number {
+  return Math.max(1, Math.round(seconds / 60));
+}
+
+/**
+ * Sum of durations, or null if any one is unknown — a partial total would be
+ * a fabricated number, so the caller hides it instead.
+ */
+export function totalSeconds(durations: (number | null)[]): number | null {
+  if (durations.length === 0) return null;
+  let sum = 0;
+  for (const d of durations) {
+    if (d === null) return null;
+    sum += d;
   }
-  return out;
+  return sum;
+}
+
+/** Time-of-day greeting for Home's header. */
+export function greeting(date: Date = new Date()): string {
+  const h = date.getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
 }

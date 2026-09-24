@@ -35,14 +35,18 @@ const expectDenied = (label, result) => {
   ok(`anon cannot ${label}`, denied, denied ? `rejected (${code}) ${result.error.message}` : 'WRITE SUCCEEDED');
 };
 expectDenied('INSERT categories', await supabase.from('categories').insert({ name: 'x', slug: 'x-probe', sort_order: 99 }).select());
-expectDenied('UPDATE confessions', await supabase.from('confessions').update({ title: 'tampered' }).eq('sort_order', 1).select());
-expectDenied('DELETE confessions', await supabase.from('confessions').delete().eq('sort_order', 1).select());
+// Aim write attempts at a row the anon key can actually see (published), so a
+// rejection proves the policy blocks writes rather than just hiding the row.
+const PROBE_SORT = 6;
+const PROBE_TITLE = 'God Gave Me Power';
+expectDenied('UPDATE confessions', await supabase.from('confessions').update({ title: 'tampered' }).eq('sort_order', PROBE_SORT).select());
+expectDenied('DELETE confessions', await supabase.from('confessions').delete().eq('sort_order', PROBE_SORT).select());
 expectDenied('INSERT scriptures', await supabase.from('scriptures').insert({ confession_id: '00000000-0000-4000-8000-000000000001', reference: 'x', sort_order: 9 }).select());
 expectDenied('DELETE confession_categories', await supabase.from('confession_categories').delete().neq('category_id', '00000000-0000-0000-0000-000000000000').select());
 
 // Confirm the seed survived the write attempts.
-const { data: after } = await supabase.from('confessions').select('title').eq('sort_order', 1).maybeSingle();
-ok('seed row intact after write attempts', after?.title === 'I Am Strong and Courageous', after?.title ?? 'missing');
+const { data: after } = await supabase.from('confessions').select('title').eq('sort_order', PROBE_SORT).maybeSingle();
+ok('published row intact after write attempts', after?.title === PROBE_TITLE, after?.title ?? 'missing');
 
 // RLS flag check (needs a direct DB connection; skipped otherwise).
 if (process.env.SUPABASE_DB_URL) {
