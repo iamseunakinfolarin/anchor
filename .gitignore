@@ -49,3 +49,6 @@ example
 
 # local tooling
 .claude/
+
+# Remotion renders
+video/out/

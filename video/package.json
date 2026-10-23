@@ -1,0 +1,23 @@
+{
+  "name": "anchor-video",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Remotion project for Anchor promo and social video. Separate from the Expo app.",
+  "scripts": {
+    "studio": "remotion studio",
+    "render": "remotion render",
+    "upgrade": "remotion upgrade",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.538",
+    "@remotion/google-fonts": "4.0.538",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "remotion": "4.0.538"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.2",
+    "typescript": "~6.0.3"
+  }
+}

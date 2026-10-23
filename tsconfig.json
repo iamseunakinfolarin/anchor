@@ -8,6 +8,10 @@
       ]
     }
   },
+  "exclude": [
+    "video",
+    "node_modules"
+  ],
   "include": [
     "**/*.ts",
     "**/*.tsx",
